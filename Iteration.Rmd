@@ -1,0 +1,68 @@
+---
+title: "HW4"
+output: html_document
+date: "2023-10-24"
+---
+
+QUESTION 1
+```{r}
+library(dplyr)
+library(purrr)
+library(mosaicData)
+```
+
+(a) Use the HELPrct data from the mosaicData to calculate the mean of all numeric variables (be sure to exclude missing values).
+```{r}
+#Apply the mean function across all columns that are numeric, excluding missing values
+HELPrct %>%
+  summarize(across(where(is.numeric), mean, na.rm = TRUE))
+```
+
+(b) Find the mean of all the numeric variables stratified by sex and age group where age groups are defined as ranges of 10 years (i.e. 0-10, 10-20, 20-30, etc).
+```{r}
+max(HELPrct$age)
+
+#create a variable that lists the age range group that the age falls under.
+#ages are cut into 10 year range groups.
+grp_HELPrct <- HELPrct %>% mutate(age_group = cut(HELPrct$age, breaks = seq(0,70, by = 10), right = FALSE, labels = c("0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70"))) %>% 
+  #Group by sex and age_group and calculate the means across all numeric columns, excluding missing values.
+  group_by(sex, age_group) %>% summarize(across(where(is.numeric), mean, na.rm = TRUE))
+grp_HELPrct
+```
+
+(c) Using the data set created in the previous problem, create a set of line plots with the average age of the age group on the x-axis and each of other numeric variables on the y-axis in separate plots stratified by sex.
+```{r}
+library(ggplot2)
+
+#To create a character vector of the variables to use on the y-axis, use names() to get all variable names and remove the variables that are not being used on the y-axis.
+titles <- names(grp_HELPrct)
+to_remove <- c("sex", "age_group", "age")
+titles <- titles[!titles %in% to_remove]
+
+#Create a function that plots the age from the grp_HELPrct (average age per age group) on the x-axis against a given y variable. Use !!sym() so that num_variable is evaluated as a variable.
+ageGroup_plot <- function(num_variable) {
+  ggplot(
+  data = grp_HELPrct,
+  aes(x=age, y=!!sym(num_variable), color=sex)) +geom_line()
+}
+
+#Use map() to apply the function to each item in titles
+titles %>% map(ageGroup_plot)
+```
+
+QUESTION 2
+The team IDs corresponding to Brooklyn baseball teams from the Teams data frame from the Lahman package are listed below. Use map int() to find the number of seasons in which each of those teams played by calling a function called count seasons.
+```{r}
+library(Lahman)
+#Create function that selects rows where the input teamID appears and counts the number of rows.
+count_seasons <- function(code) {
+  selected_team <- filter(Teams, teamID == code)
+  length(unique(selected_team$yearID))
+}
+bk_teams <- c("BR1", "BR2", "BR3", "BR4", "BRO", "BRP", "BRF")
+seasons <- bk_teams %>% map_int(count_seasons)
+data.frame(team_ID = bk_teams, Seasons = seasons)
+```
+
+Python:
+https://colab.research.google.com/drive/1y0LPxJAEYlI0diFNOqpXbIhMxJP_VRHh?usp=sharing
