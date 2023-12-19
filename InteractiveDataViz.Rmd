@@ -1,0 +1,41 @@
+---
+title: "Homework 6"
+output: html_document
+date: "2023-11-09"
+---
+
+Using the data whately 2015 from the macleish package, create an interac- tive plot using plotly (or ggplotly) displaying time (in days) on the x-axis and temperature on the y-axis with three lines: one for the high temper- ature of the day, one for the average temperature of the day, and one for the low temperature of the day. A csv version of the file can be found here: https://www.dropbox.com/s/m2nt50qanpijp0m/whately2015.csv?dl=0
+```{r}
+library(mdsr)
+library(macleish)
+library(lubridate)
+library(plotly) 
+library(tidyverse)
+```
+
+```{r}
+whately <- whately_2015
+
+#convert when to date object
+whately$weather_date <- as.Date(whately$when)
+
+#add column for day of the year and calculate temperature measures for each day
+whately <- whately %>% mutate(day_of_year = yday(weather_date)) %>% group_by(day_of_year) %>% summarize(high_temp=max(temperature), low_temp=min(temperature), ave_temp=ave(temperature))
+whately
+
+#create plot with line for each measure
+g <- ggplot(aes(x = day_of_year), data = whately)+
+  geom_line(aes(y = high_temp, color = "High"))+
+  geom_line(aes(y = low_temp, color = "Low"))+
+  geom_line(aes(y = ave_temp, color = "Ave"))+
+  xlab("Day of Year")+
+  ylab("Temperature")+
+  labs(title ="Temperatures through the Year",
+       color = "Temperature Measures")
+
+#make plot interactive
+ggplotly(g)
+```
+
+Python version:
+https://colab.research.google.com/drive/1AFCz7vT15EiZATUsE-1ajxn4veN7nMOb?usp=sharing
